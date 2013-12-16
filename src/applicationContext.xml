@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:p="http://www.springframework.org/schema/p"
+	xsi:schemaLocation="
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
+		http://www.springframework.org/schema/task http://www.springframework.org/schema/task/spring-task.xsd">
+
+	<!-- c3p0 部署时使用，开发时请用Basic的，避免代理，方便debug -->
+	<bean id="c3p0DataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource"
+		destroy-method="close">
+		<property name="driverClass">
+			<value>org.postgresql.Driver</value>
+		</property>
+		<property name="jdbcUrl">
+			<value>jdbc:postgresql://localhost:5432/free-choice-v1</value>
+		</property>
+		<!-- <property name="user"> <value>$&#123;db.user&#125;</value> </property> 
+			<property name="password"> <value>$&#123;db.pass&#125;</value> </property> -->
+		<property name="properties">
+			<props>
+				<prop key="c3p0.acquire_increment">5</prop>
+				<prop key="c3p0.idle_test_period">80</prop>
+				<prop key="c3p0.max_size">100</prop>
+				<prop key="c3p0.max_statements">0</prop>
+				<prop key="c3p0.min_size">10</prop>
+				<prop key="user">bcgh2013</prop>
+				<prop key="password">2013.bcgh.start</prop>
+			</props>
+		</property>
+	</bean>
+
+	<!-- 数据源 -->
+	<bean id="basicDataSource" class="org.apache.commons.dbcp.BasicDataSource"
+		destroy-method="close">
+		<property name="driverClassName" value="org.postgresql.Driver"></property>
+		<property name="url"
+			value="jdbc:postgresql://localhost:5432/free-choice-v1" />
+		<property name="username" value="bcgh2013" />
+		<property name="password" value="2013.bcgh.start" />
+	</bean>
+
+	<bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
+		<property name="dataSource" ref="basicDataSource" />
+	</bean>
+
+	<!-- DAO实现类 -->
+	<bean id="tagDao" class="net.freechoice.dao.impl.DaoTag">
+		<property name="jdbcTemplate">
+			<ref bean="jdbcTemplate" />
+		</property>
+	</bean>
+	
+	<bean id="commentDao" class="net.freechoice.dao.impl.DaoComment">
+		<property name="jdbcTemplate">
+			<ref bean="jdbcTemplate" />
+		</property>
+	</bean>
+	
+	<bean id="postDao" class="net.freechoice.dao.impl.DaoPost">
+		<property name="jdbcTemplate">
+			<ref bean="jdbcTemplate" />
+		</property>
+	</bean>
+	
+	<bean id="userDao" class="net.freechoice.dao.impl.DaoUser">
+		<property name="jdbcTemplate">
+			<ref bean="jdbcTemplate" />
+		</property>
+	</bean>
+
+	<!-- 分页服务 -->
+	<bean id="pageService" class="net.freechoice.service.PageService">
+		<property name="pageSize" value="10"/>
+	</bean>
+
+<!-- 蔡博文 @since 2013-11-30 -->
+<!-- 标明singleton的是必须单实例的类 -->
+
+	<bean
+		class="org.springframework.scheduling.concurrent.ScheduledExecutorFactoryBean"
+		scope="singleton">
+			
+		<property name="scheduledExecutorTasks">
+			<list>
+			
+	<!-- 定时检测负载并对系统进行负载评估 -->
+				<bean
+					class="org.springframework.scheduling.concurrent.ScheduledExecutorTask">
+					<property name="period" value="5000" />
+					<property name="runnable">
+						<bean
+							class="org.springframework.scheduling.support.MethodInvokingRunnable">
+							<property name="targetObject" ref="regulator" />
+							<property name="targetMethod" value="test" />
+						</bean>
+					</property>
+				</bean>
+				
+			</list>
+		</property>
+	</bean>
+
+	<!-- 线程池，用于一些需要异步操作的场合 -->
+	<bean id="taskExecutor"	
+			class="org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor"
+			scope="singleton">
+			
+		<property name="corePoolSize" value="2" />
+		<property name="maxPoolSize" value="8" />
+		<property name="queueCapacity" value="16" />
+	</bean>
+	
+	<!-- ActionXyx 需要的Beans的id必须与Action里的一致 -->
+	<!-- ActionUser 用到 -->
+	<bean id="encryptionService" 
+			class="net.freechoice.service.EncryptionService"
+			scope="singleton">
+	</bean>
+	
+<!-- Start: 负载调节器控制的beans -->
+	<bean id="mailService" class="net.freechoice.service.WebMailService"
+			scope="singleton">
+			
+		<property name="mailSender">
+			<ref bean="mailSender" />
+		</property>
+		<property name="taskExecutor">
+			<ref bean="taskExecutor"/>
+		</property>
+	</bean>
+
+	<!-- ActionUser ActionList 用到 -->
+	<bean id="searchService" class="net.freechoice.service.BlogSearchService"
+			scope="singleton">
+	</bean>
+<!-- End:负载调节器控制的beans -->
+
+	<bean id="monitor" class="net.freechoice.application.load.ServerMonitor"
+			scope="singleton">
+	</bean>
+
+	<!-- 负载调节器 -->
+	<bean id="regulator" class="net.freechoice.service.RegulationService"
+			scope="singleton">
+			
+		<property name="monitor">
+			<ref bean="monitor" />
+		</property>
+		<property name="calculator">
+			<bean class="net.freechoice.application.load.calculator.DemoCalculator">
+			</bean>
+		</property>
+		<property name="snapShooter">
+			<ref bean="snapShooter" />
+		</property>
+	</bean>
+
+	<!-- 全局的mailsender -->
+	<bean id="mailSender" 
+			class="net.freechoice.application.MailSender"
+			scope="singleton">
+			
+		<property name="senderAddr" 	value="net_freechoice@163.com" />
+		<property name="senderPsw" 		value="psw-dev" />
+		<property name="senderHostName" value="smtp.163.com" />
+		<property name="template">
+			<value>
+				<![CDATA[
+			--------------------   From WWW.Free-Choice.Net   --------------------
+				
+				Name	: %s
+				Address	: %s
+				
+				Subject	: %s
+				Content	: %s
+						 
+			--------------------   From WWW.Free-Choice.Net   --------------------
+				]]>
+			</value>
+		</property>
+		<property name="targetList">
+			<list>
+				<value> 
+					<![CDATA[hzzyxxx@163.com]]>
+				</value>
+				<value>
+					<![CDATA[bowen.fc.net@gmail.com]]>
+				</value>
+			</list>
+		</property>
+		<property name="debugMode" value="true" />
+	</bean>
+	
+	<!-- 生成系统当前快照 -->
+	<bean id="snapShooter" class="net.freechoice.application.SnapShooter"
+			scope="singleton">
+			
+		<property name="mailSender">
+			<ref bean="mailSender" />
+		</property>
+		<property name="postDao">
+			<ref bean="postDao"/>
+		</property>
+		<property name="commentDao">
+			<ref bean="commentDao"/>
+		</property>
+				<property name="template">
+			<value>
+				<![CDATA[
+				Time		:	%s
+				CPU load	:	%f
+				Heap Usage  :	%f
+				Non-Heap	:	%f
+				
+				Session		:	%d
+				Post		:	%d
+				Comment		:	%d
+				]]>
+			</value>
+		</property>
+	</bean>
+
+</beans>
+
+
+
+

@@ -1,0 +1,262 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE struts PUBLIC "-//Apache Software Foundation//DTD Struts Configuration 2.1//EN" "http://struts.apache.org/dtds/struts-2.1.dtd">
+<struts>
+	<constant name="struts.enable.DynamicMethodInvocation" value="false" />
+	<constant name="struts.devMode" value="true" />
+
+<!-- 
+	这里需要改一下
+	default-action-ref name 改为博客首页
+-->
+	<package name="default" namespace="/" extends="struts-default">
+
+		<default-action-ref name="index" />
+
+		<global-results>
+			<result name="error">/error.jsp</result>
+		</global-results>
+
+		<global-exception-mappings>
+			<exception-mapping exception="java.lang.Exception"
+				result="error" />
+		</global-exception-mappings>
+
+		<action name="index">
+			<result name="success">/index.jsp</result>
+		</action>
+
+		<action name="welcome">
+			<result name="success">/index.jsp</result>
+		</action>
+
+		<action name="#">
+			<result type="redirectAction">blog</result>
+		</action>
+
+<!-- 前台展示 -->
+		
+	<!-- 应用展示 ，第一页使用静态的，app下需要交互的再使用动态-->
+		<!-- 
+		<action name="team" class="net.freechoice.action.ActionTeam">
+			<result name="success">/team.jsp</result>
+			<result name="error">/error.jsp</result>
+		</action>
+	
+		<action name="app" class="net.freechoice.action.ActionApp">
+			<result name="success">/app.jsp</result>
+			<result name="error">/error.jsp</result>
+		</action>
+			 -->
+			 
+	<!-- 研究展示 ，第一页使用静态的，research下需要交互的再使用动态-->
+	
+	<!-- 博客模块 -->
+		
+		<action name="blog" class="net.freechoice.action.ActionList"
+			method="query">
+			<result name="success">/bloglist.jsp</result>
+			<result name="error">/error.jsp</result>
+		</action>
+		 
+		<action name="getBlog" class="net.freechoice.action.ActionList"
+			method="getBlog">
+			<result name="success">/blog.jsp</result>
+			<result name="error">/error.jsp</result>
+		</action>
+
+				<!-- 
+					全文检索 ActionList和JSP里改名为search了
+				-->
+		<action name="search" class="net.freechoice.action.ActionList"
+			method="search">
+			<result name="success">/bloglist.jsp</result>
+			<result name="error">/error.jsp</result>
+		</action>
+
+		<action name="queryByTag" class="net.freechoice.action.ActionList"
+			method="queryByTag">
+			<result name="success">/bloglist.jsp</result>
+			<result name="error">/error.jsp</result>
+		</action>
+		
+		<action name="queryByAuthor" class="net.freechoice.action.ActionList"
+			method="queryByUser">
+			<result name="success">/bloglist.jsp</result>
+			<result name="error">/error.jsp</result>
+		</action>
+		
+		<action name="addComment" class="net.freechoice.action.ActionList"
+			method="addComment">
+			<result name="success" type="redirectAction">blog</result>
+			<result name="error">/error.jsp</result>
+		</action>
+		
+		<!-- 发送E-mail -->
+		<action name="sendMail" class="net.freechoice.action.ActionMail">
+			<result name="success" type="redirectAction">blog</result>
+			<result name="error">/error.jsp</result>
+		</action>
+
+	</package><!-- default -->
+
+
+<!-- 后台管理 -->
+	<package name="dashboard" namespace="/dashboard" extends="struts-default">
+
+		<default-action-ref name="index" />
+
+		<action name="index">
+			<result name="success" type="redirectAction">queryBlog</result>
+		</action>
+		
+		<!-- 博客管理开始 -->
+		
+		<action name="queryBlog" class="net.freechoice.action.ActionBlog"
+			method="query">
+			<result name="success">/dashboard/index.jsp</result>
+			<result name="login">/dashboard/login.jsp</result>
+			<result name="error">/error.jsp</result>
+		</action>
+
+		<action name="beforeAddBlog" class="net.freechoice.action.ActionTag"
+			method="query">
+			<result name="success">/dashboard/addBlog.jsp</result>
+			<result name="login">/dashboard/login.jsp</result>
+			<result name="error">/error.jsp</result>
+		</action>
+
+		<action name="addBlog" class="net.freechoice.action.ActionBlog"
+			method="save">
+			<result name="success">/dashboard/success.html</result>
+			<result name="input">/dashboard/addBlog.jsp</result>
+			<result name="login">/dashboard/login.jsp</result>
+			<result name="error">/error.jsp</result>
+		</action>
+
+		<action name="updateBlog" class="net.freechoice.action.ActionBlog"
+			method="update">
+			<result name="success">/dashboard/success.html</result>
+			<result name="login">/dashboard/login.jsp</result>
+			<result name="error">/error.jsp</result>
+		</action>
+
+		<action name="getBlog" class="net.freechoice.action.ActionBlog"
+			method="get">
+			<result name="success">/dashboard/updateBlog.jsp</result>
+			<result name="error">/error.jsp</result>
+		</action>
+
+		<action name="delBlog" class="net.freechoice.action.ActionBlog"
+			method="delete">
+			<result name="success">/dashboard/success.html</result>
+			<result name="error">/error.jsp</result>
+		</action>
+
+
+
+		<!-- 博客管理结束 -->
+
+		<!-- 标签管理开始 -->
+		<action name="queryTag" class="net.freechoice.action.ActionTag"
+			method="query">
+			<result name="success">/dashboard/tag.jsp</result>
+			<result name="error">/error.jsp</result>
+		</action>
+
+		<action name="addTag" class="net.freechoice.action.ActionTag"
+			method="save">
+			<result name="success" type="redirectAction">queryTag</result>
+			<result name="error">/error.jsp</result>
+		</action>
+
+		<action name="getTag" class="net.freechoice.action.ActionTag"
+			method="get">
+			<result name="success">/dashboard/updateTag.jsp</result>
+			<result name="error">/error.jsp</result>
+		</action>
+
+		<action name="updateTag" class="net.freechoice.action.ActionTag"
+			method="update">
+			<result name="success" type="redirectAction">queryTag</result>
+			<result name="error">/error.jsp</result>
+		</action>
+
+		<action name="delTag" class="net.freechoice.action.ActionTag"
+			method="delete">
+			<result name="success" type="redirectAction">queryTag</result>
+			<result name="error">/error.jsp</result>
+		</action>
+
+
+		<!-- 媒体库 -->
+
+		<action name="addMedia" class="net.freechoice.action.ActionMedia"
+			method="save">
+
+			<result name="success" type="redirectAction">queryMedia</result>
+			<result name="input">/dashboard/addMedia.jsp</result>
+			<result name="error">/error.jsp</result>
+		</action>
+
+		<action name="queryMedia" class="net.freechoice.action.ActionMedia"
+			method="query">
+
+			<result name="success">/dashboard/media.jsp</result>
+			<result name="error">/error.jsp</result>
+		</action>
+
+
+		<action name="delMedia" class="net.freechoice.action.ActionMedia"
+			method="delete">
+
+			<result name="success" type="redirectAction">queryMedia</result>
+			<result name="error">/error.jsp</result>
+		</action>
+
+
+		<!-- 媒体库结束 -->
+
+
+		<!-- 登录注册及个人信息开始 -->
+
+		<action name="register" class="net.freechoice.action.ActionUser"
+			method="save">
+			<result name="success" type="redirectAction">queryBlog</result>
+			<result name="input">/dashboard/register.jsp</result>
+			<result name="error">/error.jsp</result>
+		</action>
+
+		<action name="login" class="net.freechoice.action.ActionUser"
+			method="login">
+			<result name="success" type="redirectAction">queryBlog</result>
+			<result name="input">/dashboard/login.jsp</result>
+			<result name="error">/error.jsp</result>
+		</action>
+
+		<action name="logout" class="net.freechoice.action.ActionUser"
+			method="logout">
+			<result name="success" type="redirectAction">
+				<param name="namespace">/</param>
+				<param name="actionName">welcome</param>
+			</result>
+			<result name="error">/error.jsp</result>
+		</action>
+
+		<action name="getUser" class="net.freechoice.action.ActionUser"
+			method="get">
+			<result name="success">/dashboard/user.jsp</result>
+			<result name="error">/error.jsp</result>
+		</action>
+
+		<action name="updateUser" class="net.freechoice.action.ActionUser"
+			method="update">
+			<result name="success" type="redirectAction">getUser</result>
+			<result name="input">/dashboard/user.jsp</result>
+			<result name="error">/error.jsp</result>
+		</action>
+
+		<!-- 登录及个人信息结束 -->
+	</package> 	<!-- dash board-->
+	
+</struts>    
